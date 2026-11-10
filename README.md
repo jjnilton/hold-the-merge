@@ -29,6 +29,7 @@ Example config:
 
 - After confirming the merge, it will wait 5 seconds (default) before actually merging. (0 to disable/merge immediately after confirming).
 - It will ask for confirmation on the branches "main" and "develop" of the repository "owner/repository", and all branches on the "owner/another-repository".
+- `"*"` as a repository key applies to every repository. An exact `owner/repo` entry takes precedence.
 
 Missing keys use defaults, and empty objects are not saved.
 

@@ -97,7 +97,9 @@
         if (Object.prototype.hasOwnProperty.call(repos, fullRepo)) return repos[fullRepo];
         const lower = fullRepo.toLowerCase();
         const key = Object.keys(repos).find(k => k.toLowerCase() === lower);
-        return key === undefined ? undefined : repos[key];
+        if (key !== undefined) return repos[key];
+        // "*" applies to any repository when no exact entry exists
+        return Object.prototype.hasOwnProperty.call(repos, '*') ? repos['*'] : undefined;
     }
 
     function normalizeBranches(value) {
@@ -753,7 +755,7 @@
     // ---- Config editor (Ctrl+Alt+M) ----
 
     // indented to keep branch arrays on one line
-    // the "*" example also documents the wildcard
+    // the "*" examples document branch and repository wildcards
     const CONFIG_EXAMPLE = [
         '{',
         '  "settings": {',
@@ -761,7 +763,7 @@
         '  },',
         '  "repositories": {',
         '    "owner/repository": ["main", "develop"],',
-        '    "owner/another-repository": ["*"]',
+        '    "owner/another-repository": ["*"],',
         '  }',
         '}'
     ].join('\n');
@@ -851,12 +853,12 @@
         if (Object.prototype.hasOwnProperty.call(parsed, REPOSITORIES_KEY)) {
             const repos = parsed[REPOSITORIES_KEY];
             if (!repos || typeof repos !== 'object' || Array.isArray(repos)) {
-                return { error: '"' + REPOSITORIES_KEY + '" must be an object mapping "owner/repo" to branch names.' };
+                return { error: '"' + REPOSITORIES_KEY + '" must be an object mapping "owner/repo" or "*" to branch names.' };
             }
             const repositories = {};
             for (const key of Object.keys(repos)) {
-                if (key.indexOf('/') === -1) {
-                    return { error: 'Repository keys must look like "owner/repo" (got "' + key + '").' };
+                if (key !== '*' && key.indexOf('/') === -1) {
+                    return { error: 'Repository keys must look like "owner/repo" or "*" (got "' + key + '").' };
                 }
                 if (!normalizeBranches(repos[key])) {
                     return { error: 'Value for "' + key + '" must be a branch name or a list of branch names.' };
