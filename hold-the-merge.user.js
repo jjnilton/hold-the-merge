@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hold the Merge - GitHub Merge Two-step confirmation
 // @namespace    https://github.com/jjnilton/hold-the-merge
-// @version      0.2.0
+// @version      0.3.0
 // @description  Adds a two-step confirmation before GitHub's "Confirm merge" button
 // @updateURL    https://github.com/jjnilton/hold-the-merge/raw/refs/heads/main/hold-the-merge.user.js
 // @downloadURL  https://github.com/jjnilton/hold-the-merge/raw/refs/heads/main/hold-the-merge.user.js
@@ -26,7 +26,7 @@
     'use strict';
 
     const PREFIX = '[Hold the Merge]';
-    const VERSION = '0.2.0';
+    const VERSION = '0.3.0';
     const CONFIG_KEY = 'jjnilton:hold-the-merge:config';
     const SETTINGS_KEY = 'settings';
     const REPOSITORIES_KEY = 'repositories';
@@ -442,6 +442,12 @@
     box-shadow: var(--button-primary-shadow-selected, inset 0 1px 0 rgba(0, 45, 17, 0.3));
 }
 
+.merge-protect-button--primary:disabled {
+    color: var(--button-primary-fgColor-disabled, var(--fgColor-white, #fff));
+    background-color: var(--button-primary-bgColor-disabled, #95d8a6);
+    border-color: var(--button-primary-borderColor-disabled, var(--borderColor-translucent, rgba(31, 35, 40, 0.15)));
+}
+
 /* spinner inside the busy confirm button */
 .merge-protect-spinner {
     display: inline-block;
@@ -653,6 +659,18 @@
             let busyStop = null;
             let busyLabel = null;
 
+            const canConfirm = typeof options.canConfirm === 'function' ? options.canConfirm : null;
+
+            function updateConfirmState() {
+                if (!canConfirm || busy) return;
+                okBtn.disabled = !canConfirm(field.value);
+            }
+
+            if (canConfirm) {
+                field.addEventListener('input', updateConfirmState);
+                updateConfirmState();
+            }
+
             const controller = {
                 setBusy(text, onStop) {
                     busyStop = onStop || null;
@@ -661,6 +679,7 @@
                         field.disabled = true;
                         cancelBtn.hidden = true;
                         closeBtn.disabled = true;
+                        okBtn.disabled = false;
                         okBtn.className = 'merge-protect-button merge-protect-button--secondary';
                         okBtn.setAttribute('data-mp-action', 'stop');
                         okBtn.textContent = '';
@@ -683,6 +702,7 @@
                     okBtn.className = 'merge-protect-button merge-protect-button--primary';
                     okBtn.setAttribute('data-mp-action', 'confirm');
                     okBtn.textContent = okLabel;
+                    updateConfirmState();
                     field.focus();
                 },
                 close(result) {
@@ -695,6 +715,7 @@
                     if (busyStop) busyStop();
                     return;
                 }
+                if (canConfirm && !canConfirm(field.value)) return;
                 if (typeof options.onConfirm === 'function') {
                     Promise.resolve(options.onConfirm(field.value.trim(), controller)).catch(err => {
                         console.error(PREFIX, 'confirm handler failed', err);
@@ -1028,6 +1049,8 @@
             // typed text: "<owner>/<repo>@<base branch>"
             // uses the protected branch being merged into
             const expected = base ? ctx.fullRepo + '@' + base : ctx.fullRepo;
+            // keep the confirm button disabled until the typed text matches
+            const matches = value => value.trim().toLowerCase() === expected.toLowerCase();
             const answer = await showTextareaPrompt({
                 title: 'Confirm merge',
                 message: base && head
@@ -1043,8 +1066,9 @@
                 input: true,
                 okLabel: 'Confirm',
                 mono: false,
+                canConfirm: matches,
                 onConfirm: async (value, ui) => {
-                    if (value.toLowerCase() !== expected.toLowerCase()) {
+                    if (!matches(value)) {
                         alert('Confirmation text does not match "' + expected + '". Merge aborted.');
                         return;
                     }
