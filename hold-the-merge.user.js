@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hold the Merge - GitHub Merge Two-step confirmation
 // @namespace    https://github.com/jjnilton/hold-the-merge
-// @version      0.1
+// @version      0.2.0
 // @description  Adds a two-step confirmation before GitHub's "Confirm merge" button
 // @updateURL    https://github.com/jjnilton/hold-the-merge/raw/refs/heads/main/hold-the-merge.user.js
 // @downloadURL  https://github.com/jjnilton/hold-the-merge/raw/refs/heads/main/hold-the-merge.user.js
@@ -26,7 +26,7 @@
     'use strict';
 
     const PREFIX = '[Hold the Merge]';
-    const VERSION = '0.1';
+    const VERSION = '0.2.0';
     const CONFIG_KEY = 'jjnilton:hold-the-merge:config';
     const SETTINGS_KEY = 'settings';
     const REPOSITORIES_KEY = 'repositories';
