@@ -7,7 +7,7 @@ A userscript that adds a two-step, typed confirmation, and a countdown timer to 
 ## Install
 
 1. Install a userscript manager such as [Violentmonkey](https://violentmonkey.github.io/) or [Tampermonkey](https://www.tampermonkey.net/).
-2. Open the raw `hold-the-merge.user.js` URL form this respository in the browser to install.
+2. Open the [raw userscript URL](https://github.com/jjnilton/hold-the-merge/raw/refs/heads/main/hold-the-merge.user.js) in the browser to install.
 
 ## Usage
 
