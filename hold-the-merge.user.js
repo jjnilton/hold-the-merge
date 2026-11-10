@@ -3,6 +3,8 @@
 // @namespace    https://github.com/jjnilton/hold-the-merge
 // @version      0.1
 // @description  Adds a two-step confirmation before GitHub's "Confirm merge" button
+// @updateURL    https://github.com/jjnilton/hold-the-merge/raw/refs/heads/main/hold-the-merge.user.js
+// @downloadURL  https://github.com/jjnilton/hold-the-merge/raw/refs/heads/main/hold-the-merge.user.js
 // @author       JJ
 // @license      GPL-3.0-only
 // @match        https://github.com/*/*/pull/*
