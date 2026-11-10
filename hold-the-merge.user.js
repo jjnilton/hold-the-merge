@@ -765,7 +765,7 @@
         '  },',
         '  "repositories": {',
         '    "owner/repository": ["main", "develop"],',
-        '    "owner/another-repository": ["*"],',
+        '    "owner/another-repository": ["*"]',
         '  }',
         '}'
     ].join('\n');
