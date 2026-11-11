@@ -34,7 +34,7 @@
     const DEFAULT_COUNTDOWN_SECONDS = 5;
     const MAX_COUNTDOWN_SECONDS = 300;
 
-    console.log(PREFIX, 'v' + VERSION + ' loaded');
+    console.log(PREFIX, `v${VERSION} loaded`);
 
     // settings.countdown: wait in seconds
     // repositories: owner/repo to branches ("*" = all branches)
@@ -123,12 +123,12 @@
         if (raw === undefined || raw === null || raw === '') return DEFAULT_COUNTDOWN_SECONDS;
         const n = typeof raw === 'number' ? raw : Number(String(raw).trim());
         if (!Number.isFinite(n)) {
-            console.warn(PREFIX, SETTINGS_KEY + '.' + COUNTDOWN_KEY + ' is not a number (' + JSON.stringify(raw) + '), using default ' + DEFAULT_COUNTDOWN_SECONDS);
+            console.warn(PREFIX, `${SETTINGS_KEY}.${COUNTDOWN_KEY} is not a number (${JSON.stringify(raw)}), using default ${DEFAULT_COUNTDOWN_SECONDS}`);
             return DEFAULT_COUNTDOWN_SECONDS;
         }
         const secs = Math.round(n);
         if (secs < 0 || secs > MAX_COUNTDOWN_SECONDS) {
-            console.warn(PREFIX, SETTINGS_KEY + '.' + COUNTDOWN_KEY + ' out of range (0..' + MAX_COUNTDOWN_SECONDS + '), clamping from ' + secs);
+            console.warn(PREFIX, `${SETTINGS_KEY}.${COUNTDOWN_KEY} out of range (0..${MAX_COUNTDOWN_SECONDS}), clamping from ${secs}`);
             return Math.min(Math.max(secs, 0), MAX_COUNTDOWN_SECONDS);
         }
         return secs;
@@ -537,7 +537,7 @@
 
             const heading = document.createElement('h2');
             heading.className = 'merge-protect-title';
-            heading.id = 'merge-protect-title-' + (++promptSeq);
+            heading.id = `merge-protect-title-${++promptSeq}`;
             heading.textContent = title;
             dialog.setAttribute('aria-labelledby', heading.id);
             titleWrap.appendChild(heading);
@@ -551,8 +551,8 @@
             closeBtn.className = 'merge-protect-close';
             closeBtn.setAttribute('aria-label', 'Close');
             closeBtn.setAttribute('data-mp-action', 'cancel');
-            closeBtn.innerHTML = '<svg class="octicon octicon-x" aria-hidden="true" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">' +
-                '<path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"></path></svg>';
+            closeBtn.innerHTML = `<svg class="octicon octicon-x" aria-hidden="true" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+<path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"></path></svg>`;
             actionWrap.appendChild(closeBtn);
             headerWrap.appendChild(actionWrap);
             header.appendChild(headerWrap);
@@ -590,7 +590,7 @@
                 body.appendChild(pre);
             }
 
-            const fieldId = label ? 'merge-protect-field-' + (++promptSeq) : '';
+            const fieldId = label ? `merge-protect-field-${++promptSeq}` : '';
             if (label) {
                 const labelEl = document.createElement('label');
                 labelEl.className = 'merge-protect-label';
@@ -603,14 +603,14 @@
             if (useInput) {
                 field = document.createElement('input');
                 field.type = 'text';
-                field.className = 'merge-protect-field merge-protect-input' + (mono ? ' merge-protect-field--mono' : '');
+                field.className = `merge-protect-field merge-protect-input${mono ? ' merge-protect-field--mono' : ''}`;
                 field.spellcheck = false;
                 field.setAttribute('aria-label', label || title || 'Input');
                 field.placeholder = placeholder;
                 field.value = value;
             } else {
                 field = document.createElement('textarea');
-                field.className = 'merge-protect-field merge-protect-textarea' + (mono ? ' merge-protect-field--mono' : '');
+                field.className = `merge-protect-field merge-protect-textarea${mono ? ' merge-protect-field--mono' : ''}`;
                 field.rows = rows;
                 field.spellcheck = false;
                 field.setAttribute('aria-label', label || title || 'Input');
@@ -782,11 +782,12 @@
     const CONFIG_EXAMPLE = [
         '{',
         '  "settings": {',
-        '    "countdown": ' + DEFAULT_COUNTDOWN_SECONDS,
+        `    "countdown": ${DEFAULT_COUNTDOWN_SECONDS}`,
         '  },',
         '  "repositories": {',
         '    "owner/repository": ["main", "develop"],',
-        '    "owner/another-repository": ["*"]',
+        '    "owner/another-repository": ["*"],',
+        '    "*": ["main"]',
         '  }',
         '}'
     ].join('\n');
@@ -801,24 +802,22 @@
 
         const blocks = [];
         if (sKeys.length) {
-            blocks.push('  "settings": {\n' +
-                sKeys.map(k => '    ' + JSON.stringify(k) + ': ' + JSON.stringify(settings[k])).join(',\n') +
-                '\n  }');
+            const lines = sKeys.map(k => `    ${JSON.stringify(k)}: ${JSON.stringify(settings[k])}`);
+            blocks.push(`  "settings": {\n${lines.join(',\n')}\n  }`);
         }
         if (rKeys.length) {
-            blocks.push('  "repositories": {\n' +
-                rKeys.map(k => {
-                    const value = repos[k];
-                    const rendered = Array.isArray(value)
-                        ? '[' + value.map(b => JSON.stringify(b)).join(', ') + ']'
-                        : JSON.stringify(value);
-                    return '    ' + JSON.stringify(k) + ': ' + rendered;
-                }).join(',\n') +
-                '\n  }');
+            const lines = rKeys.map(k => {
+                const value = repos[k];
+                const rendered = Array.isArray(value)
+                    ? `[${value.map(b => JSON.stringify(b)).join(', ')}]`
+                    : JSON.stringify(value);
+                return `    ${JSON.stringify(k)}: ${rendered}`;
+            });
+            blocks.push(`  "repositories": {\n${lines.join(',\n')}\n  }`);
         }
         // empty config gives an empty box to show the placeholder example
         if (!blocks.length) return '';
-        return '{\n' + blocks.join(',\n') + '\n}';
+        return `{\n${blocks.join(',\n')}\n}`;
     }
 
     // invalid: { error }
@@ -828,18 +827,17 @@
         try {
             parsed = JSON.parse(text);
         } catch (e) {
-            return { error: 'Invalid JSON: ' + e.message };
+            return { error: `Invalid JSON: ${e.message}` };
         }
         if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-            return { error: 'The config must be a JSON object, e.g.:\n' + CONFIG_EXAMPLE };
+            return { error: `The config must be a JSON object, e.g.:\n${CONFIG_EXAMPLE}` };
         }
 
         const allowedTopLevel = [SETTINGS_KEY, REPOSITORIES_KEY];
         for (const key of Object.keys(parsed)) {
             if (allowedTopLevel.indexOf(key) === -1) {
                 return {
-                    error: 'Unknown top-level key "' + key + '". Only "' + SETTINGS_KEY +
-                        '" and "' + REPOSITORIES_KEY + '" are allowed.'
+                    error: `Unknown top-level key "${key}". Only "${SETTINGS_KEY}" and "${REPOSITORIES_KEY}" are allowed.`
                 };
             }
         }
@@ -849,12 +847,12 @@
         if (Object.prototype.hasOwnProperty.call(parsed, SETTINGS_KEY)) {
             const settings = parsed[SETTINGS_KEY];
             if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
-                return { error: '"' + SETTINGS_KEY + '" must be an object, e.g. { "' + COUNTDOWN_KEY + '": 5 }.' };
+                return { error: `"${SETTINGS_KEY}" must be an object, e.g. { "${COUNTDOWN_KEY}": 5 }.` };
             }
             for (const key of Object.keys(settings)) {
                 if (key !== COUNTDOWN_KEY) {
                     return {
-                        error: 'Unknown "' + SETTINGS_KEY + '" key "' + key + '". Only "' + COUNTDOWN_KEY + '" is supported.'
+                        error: `Unknown "${SETTINGS_KEY}" key "${key}". Only "${COUNTDOWN_KEY}" is supported.`
                     };
                 }
             }
@@ -865,8 +863,7 @@
                     : (typeof rawSecs === 'string' && rawSecs.trim() !== '' ? Number(rawSecs) : NaN);
                 if (!Number.isFinite(secs) || Math.round(secs) < 0 || Math.round(secs) > MAX_COUNTDOWN_SECONDS) {
                     return {
-                        error: '"' + SETTINGS_KEY + '.' + COUNTDOWN_KEY + '" must be a number between 0 and ' +
-                            MAX_COUNTDOWN_SECONDS + '.'
+                        error: `"${SETTINGS_KEY}.${COUNTDOWN_KEY}" must be a number between 0 and ${MAX_COUNTDOWN_SECONDS}.`
                     };
                 }
                 config[SETTINGS_KEY] = { [COUNTDOWN_KEY]: Math.round(secs) };
@@ -876,15 +873,15 @@
         if (Object.prototype.hasOwnProperty.call(parsed, REPOSITORIES_KEY)) {
             const repos = parsed[REPOSITORIES_KEY];
             if (!repos || typeof repos !== 'object' || Array.isArray(repos)) {
-                return { error: '"' + REPOSITORIES_KEY + '" must be an object mapping "owner/repo" or "*" to branch names.' };
+                return { error: `"${REPOSITORIES_KEY}" must be an object mapping "owner/repo" or "*" to branch names.` };
             }
             const repositories = {};
             for (const key of Object.keys(repos)) {
                 if (key !== '*' && key.indexOf('/') === -1) {
-                    return { error: 'Repository keys must look like "owner/repo" or "*" (got "' + key + '").' };
+                    return { error: `Repository keys must look like "owner/repo" or "*" (got "${key}").` };
                 }
                 if (!normalizeBranches(repos[key])) {
-                    return { error: 'Value for "' + key + '" must be a branch name or a list of branch names.' };
+                    return { error: `Value for "${key}" must be a branch name or a list of branch names.` };
                 }
                 repositories[key] = repos[key];
             }
@@ -914,7 +911,7 @@
             // treat it as an empty config to really remove the old one
             const result = parseAndValidate(edited === '' ? '{}' : edited);
             if (result.error) {
-                alert(result.error + '\nNothing was saved.');
+                alert(`${result.error}\nNothing was saved.`);
                 draft = edited; // let the user fix it instead of retyping
                 continue;
             }
@@ -929,7 +926,7 @@
     function pageContext() {
         const m = location.pathname.match(/^\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
         if (!m) return null;
-        return { owner: m[1], repo: m[2], fullRepo: m[1] + '/' + m[2], pr: m[3] };
+        return { owner: m[1], repo: m[2], fullRepo: `${m[1]}/${m[2]}`, pr: m[3] };
     }
 
     function branchFromLink(link) {
@@ -1022,7 +1019,7 @@
                     resolve(true);
                     return;
                 }
-                ui.setBusy('Stop merging (' + remaining + 's)', stop);
+                ui.setBusy(`Stop merging (${remaining}s)`, stop);
                 remaining--;
                 setTimeout(tick, 1000);
             };
@@ -1048,7 +1045,7 @@
 
             // typed text: "<owner>/<repo>@<base branch>"
             // uses the protected branch being merged into
-            const expected = base ? ctx.fullRepo + '@' + base : ctx.fullRepo;
+            const expected = base ? `${ctx.fullRepo}@${base}` : ctx.fullRepo;
             // keep the confirm button disabled until the typed text matches
             const matches = value => value.trim().toLowerCase() === expected.toLowerCase();
             const answer = await showTextareaPrompt({
@@ -1060,8 +1057,8 @@
                         { text: ' into ' },
                         { branch: base }
                     ]
-                    : [{ text: 'Merge ' + ctx.fullRepo + '.' }],
-                label: 'To confirm, type "' + expected + '" in the box below',
+                    : [{ text: `Merge ${ctx.fullRepo}.` }],
+                label: `To confirm, type "${expected}" in the box below`,
                 placeholder: expected,
                 input: true,
                 okLabel: 'Confirm',
@@ -1069,7 +1066,7 @@
                 canConfirm: matches,
                 onConfirm: async (value, ui) => {
                     if (!matches(value)) {
-                        alert('Confirmation text does not match "' + expected + '". Merge aborted.');
+                        alert(`Confirmation text does not match "${expected}". Merge aborted.`);
                         return;
                     }
                     const proceed = await runCountdown(seconds, ui);
@@ -1090,7 +1087,7 @@
                 return;
             }
 
-            console.log(PREFIX, 'countdown finished (' + seconds + 's), proceeding with merge');
+            console.log(PREFIX, `countdown finished (${seconds}s), proceeding with merge`);
             bypassNextClick = true;
             try {
                 btnNow.click();
@@ -1151,10 +1148,10 @@
             // stay quiet outside PR pages to avoid console noise
             if (!ctx) return;
             const targetBranch = detectTargetBranch();
-            console.log(PREFIX, 'page:', ctx.fullRepo + ' #' + ctx.pr,
+            console.log(PREFIX, 'page:', `${ctx.fullRepo} #${ctx.pr}`,
                 '| target branch:', targetBranch || '(unknown)',
                 '| protected:', isProtected(ctx.fullRepo, targetBranch),
-                '| wait:', getCountdownSeconds(loadConfig()) + 's');
+                '| wait:', `${getCountdownSeconds(loadConfig())}s`);
         } catch (err) {
             console.error(PREFIX, 'error during init', err);
         }
