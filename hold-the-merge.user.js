@@ -644,12 +644,34 @@
             overlay.appendChild(dialog);
             document.body.appendChild(overlay);
 
+            // the redesign opens its own dialog before ours
+            // suspend it so its focus trap cannot steal focus from our input
+            const backgroundDialog = Array.from(document.querySelectorAll(
+                '[data-component="Dialog"][data-focus-trap="active"], [role="dialog"][aria-modal="true"]'
+            )).find(el => !el.closest('.merge-protect-overlay')) || null;
+            const backgroundWasInert = backgroundDialog ? !!backgroundDialog.inert : false;
+            const backgroundAriaHidden = backgroundDialog ? backgroundDialog.getAttribute('aria-hidden') : null;
+            const previousFocus = document.activeElement;
+            if (backgroundDialog) {
+                backgroundDialog.inert = true;
+                if (backgroundDialog.contains(previousFocus)) previousFocus.blur();
+                backgroundDialog.setAttribute('aria-hidden', 'true');
+            }
+
             let resolved = false;
             function finish(result) {
                 if (resolved) return;
                 resolved = true;
                 overlay.remove();
                 document.body.style.overflow = previousBodyOverflow;
+                if (backgroundDialog) {
+                    backgroundDialog.inert = backgroundWasInert;
+                    if (backgroundAriaHidden === null) backgroundDialog.removeAttribute('aria-hidden');
+                    else backgroundDialog.setAttribute('aria-hidden', backgroundAriaHidden);
+                }
+                if (previousFocus && previousFocus.isConnected && typeof previousFocus.focus === 'function') {
+                    previousFocus.focus();
+                }
                 overlayOpen = false;
                 overlayCancel = null;
                 resolve(result);
@@ -746,6 +768,8 @@
 
             // key handling on the dialog to catch field and button events
             dialog.addEventListener('keydown', e => {
+                // keep GitHub's underlying dialog from handling our keys
+                e.stopPropagation();
                 if (busy) return;
                 if (e.key === 'Enter' && (e.ctrlKey || e.metaKey || useInput)) {
                     e.stopPropagation();
@@ -766,6 +790,9 @@
                     }
                 }
             });
+
+            // keep GitHub's focus trap from pulling focus back to its dialog
+            dialog.addEventListener('focusin', e => e.stopPropagation());
 
             // focus the field rather than the overlay to start typing right away
             field.focus();
@@ -942,12 +969,51 @@
         return (link.textContent || '').trim();
     }
 
-    // find base and head in "wants to merge ... into <base> from <head>"
-    // fall back to the old span[data-testid="branch-name"] markup
+    // read the branch name from a link inside a branch group
+    function branchInGroup(group) {
+        if (!group) return '';
+        const link = group.querySelector('a[data-component="BranchName"]') ||
+            group.querySelector('a[href*="/tree/"]');
+        return link ? branchFromLink(link) : '';
+    }
+
+    // find the first matching group that actually contains a branch link
+    function firstBranchGroup(selector) {
+        for (const group of document.querySelectorAll(selector)) {
+            if (group.querySelector('a[data-component="BranchName"], a[href*="/tree/"]')) {
+                return group;
+            }
+        }
+        return null;
+    }
+
+    // read the branch next to an sr-only "Base branch:" / "Head branch:" label
+    function branchFromLabel(label) {
+        const node = Array.from(document.querySelectorAll('.sr-only, [class*="VisuallyHidden"]'))
+            .find(el => (el.textContent || '').trim().toLowerCase() === label);
+        return node && node.parentElement ? branchInGroup(node.parentElement) : '';
+    }
+
+    // find base and head in the merge summary
+    // the redesign uses baseBranchGroup / headBranchGroup, old markup uses branch-name
     function detectMergeBranches() {
+        const baseGroup = firstBranchGroup('[class*="baseBranchGroup"]');
+        const headGroup = firstBranchGroup('[class*="headBranchGroup"]');
+        if (baseGroup || headGroup) {
+            const base = branchInGroup(baseGroup);
+            const head = branchInGroup(headGroup);
+            if (base || head) return { base, head };
+        }
+
+        const labelBase = branchFromLabel('base branch:');
+        const labelHead = branchFromLabel('head branch:');
+        if (labelBase || labelHead) return { base: labelBase, head: labelHead };
+
         const containers = document.querySelectorAll('[class*="summaryContainer"]');
         for (const container of containers) {
-            if (!/wants to merge/i.test(container.textContent || '')) continue;
+            const text = container.textContent || '';
+            // the redesign uses "Base branch:" / "Head branch:" labels
+            if (!/wants to merge/i.test(text) && !/base branch/i.test(text)) continue;
             let links = Array.from(container.querySelectorAll('a[data-component="BranchName"]'));
             if (!links.length) links = Array.from(container.querySelectorAll('a[href*="/tree/"]'));
 
@@ -985,15 +1051,17 @@
         // tagged by GitHub with data-dd-action-name=pull_request.merge_box.confirm_merge
         // or confirm_squash / confirm_rebase for other merge methods
         if (el.matches('button[data-dd-action-name^="pull_request.merge_box.confirm"]')) return true;
+        // the redesign tags its native dialog button as pull_requests.merge.confirm_merge
+        if (el.matches('button[data-dd-action-name="pull_requests.merge.confirm_merge"]')) return true;
         // text fallback for "Confirm merge" and "Confirm squash and merge"
         const text = (el.textContent || '').replace(/\s+/g, ' ').trim();
         return /^confirm\b/i.test(text) && /\bmerge\b/i.test(text);
     }
 
     function findConfirmMergeButton() {
-        return document.querySelector(
-            'button[data-testid="merge-commit-button"], button[data-dd-action-name^="pull_request.merge_box.confirm"]'
-        ) || Array.from(document.querySelectorAll('button')).find(isConfirmMergeButton) || null;
+        const selector = `button[data-testid="merge-commit-button"], button[data-dd-action-name^="pull_request.merge_box.confirm"], button[data-dd-action-name="pull_requests.merge.confirm_merge"]`;
+        return document.querySelector(selector) ||
+            Array.from(document.querySelectorAll('button')).find(isConfirmMergeButton) || null;
     }
 
     // ---- Countdown ----
