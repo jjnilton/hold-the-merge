@@ -2,7 +2,7 @@
 
 **GitHub Merge Two-step confirmation**
 
-A userscript that adds a two-step, typed confirmation, and a countdown timer to the merge action on GitHub Pull Requests, configurable per repository and branch.
+A userscript that adds a two-step (typed confirmation), and a countdown timer to the merge action on GitHub Pull Requests, configurable per repository and branch.
 
 ## Install
 
